@@ -1,11 +1,10 @@
-package org.batteryparkdev.cosmicgraphdb.neo4j
+package org.batteryparkdev.neo4j.service
 
-import com.google.common.flogger.FluentLogger
-import org.batteryparkdev.neo4j.service.Neo4jConnectionService
+import org.batteryparkdev.logging.service.LogService
 import java.util.*
 
 object Neo4jUtils {
-    private val logger: FluentLogger = FluentLogger.forEnclosingClass()
+
 
     fun getEnvVariable(varname:String):String = System.getenv(varname) ?: "undefined"
     /*
@@ -25,7 +24,7 @@ object Neo4jUtils {
                     "false" -> return false
                 }
             } catch (e: Exception) {
-                logger.atSevere().log(e.message.toString())
+                LogService.logException(e)
                 return false
             }
         }
@@ -37,20 +36,17 @@ object Neo4jUtils {
      */
     fun deleteNodeRelationshipByName(parentNode: String, childNode: String, relName: String) {
         val deleteTemplate = "MATCH (:PARENT) -[r:RELATIONSHIP_NAME] ->(:CHILD) DELETE r;"
-        val countTemplate = "MATCH (:PubMedArticle) -[:RELATIONSHIP_NAME] -> (:PubMedArticle) RETURN COUNT(*)"
         val delCommand = deleteTemplate
             .replace("PARENT", parentNode)
             .replace("CHILD", childNode)
             .replace("RELATIONSHIP_NAME", relName)
-        val countCommand = countTemplate
-            .replace("PARENT", parentNode)
-            .replace("CHILD", childNode)
-            .replace("RELATIONSHIP_NAME", relName)
+        val countCommand = delCommand
+            .replace("DELETE r", "RETURN COUNT(*)")
         val beforeCount = Neo4jConnectionService.executeCypherCommand(countCommand)
-        logger.atInfo().log("Deleting $parentNode $relName $childNode relationships, before count = $beforeCount")
+        LogService.logInfo("Deleting $parentNode $relName $childNode relationships, before count = $beforeCount")
         Neo4jConnectionService.executeCypherCommand(delCommand)
         val afterCount = Neo4jConnectionService.executeCypherCommand(countCommand)
-        logger.atInfo().log("After deletion command count = $afterCount")
+        LogService.logInfo("After deletion command count = $afterCount")
     }
 
     /*
@@ -64,10 +60,10 @@ object Neo4jUtils {
             .replace("LABEL", label)
         val countLabelCommand = countLabelTemplate.replace("LABEL", label)
         val beforeCount = Neo4jConnectionService.executeCypherCommand(countLabelCommand)
-        logger.atInfo().log("Node type: $nodeName, removing label: $label before count = $beforeCount")
+        LogService.logInfo("Node type: $nodeName, removing label: $label before count = $beforeCount")
         Neo4jConnectionService.executeCypherCommand(removeLabelCommand)
         val afterCount = Neo4jConnectionService.executeCypherCommand(countLabelCommand)
-        logger.atInfo().log("Node type: $nodeName, after label removal command count = $afterCount")
+        LogService.logInfo("Node type: $nodeName, after label removal command count = $afterCount")
     }
 
     // detach and delete specified nodes in database
@@ -81,18 +77,40 @@ object Neo4jUtils {
         val afterCount = Neo4jConnectionService.executeCypherCommand(
             "MATCH (n: $nodeName) RETURN COUNT (n)"
         )
-        logger.atInfo().log(
+        LogService.logInfo(
             "Deleted $nodeName nodes, before count=${beforeCount.toString()}" +
                     "  after count=$afterCount"
         )
     }
 
     /*
-    Function to find empty (i.e. placholder) PubMedArticle nodes
-    Returns a Sequence of PubMed Ids as Ints
-     */
-    private val emptyNodeQuery = "MATCH (c:PubMedArticle) WHERE c.article_title =\"\" " +
-            " return c.pubmed_id, c.parent_id"
+   Function to determine if a Publication node with a specified
+   id exists in the database
+    */
+    fun publicationNodeExistsPredicate(pubId: String): Boolean {
+        val cypher = "OPTIONAL MATCH (pub:Publication{pub_id: $pubId }) " +
+                " RETURN pub IS NOT NULL AS Predicate"
+        return try {
+            Neo4jConnectionService.executeCypherCommand(cypher).toBoolean()
+        } catch (e: Exception) {
+            LogService.logException(e)
+            false
+        }
+    }
 
+    /*
+    Public function to determine if a Publication node with a specified
+    id and label exists in the database
+     */
+    fun publicationIdAndLabelPredicate(pubId: String,label:String) =
+        Neo4jConnectionService.executeCypherCommand("MATCH (pub:Publication{ pub_id: $pubId}) " +
+                " WHERE apoc.label.exists(pub,\"$label\")" +
+                " WITH count(*) AS count " +
+                " CALL apoc.when (count > 0, " +
+                " \"RETURN true AS bool\",  " +
+                " \"RETURN false AS bool\", " +
+                " {count:count}" +
+                " ) YIELD value "+
+                " return value.bool ").toBoolean()
 
 }

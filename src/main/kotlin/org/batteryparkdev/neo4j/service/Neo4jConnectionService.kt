@@ -4,15 +4,10 @@
 
 package org.batteryparkdev.neo4j.service
 
-import com.google.common.flogger.FluentLogger
 import com.google.common.flogger.StackSize
-import org.batteryparkdev.cosmicgraphdb.neo4j.Neo4jUtils.getEnvVariable
-import org.batteryparkdev.property.service.ApplicationPropertiesService
+import org.batteryparkdev.logging.service.LogService
 import org.jetbrains.kotlin.konan.file.use
 import org.neo4j.driver.*
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * Responsible for establishing a connection to a local Neo4j database
@@ -22,12 +17,10 @@ import java.util.*
  */
 object Neo4jConnectionService {
 
-    private val logger: FluentLogger = FluentLogger.forEnclosingClass();
-    private val neo4jAccount = getEnvVariable("NEO4J_ACCOUNT")
-    private val neo4jPassword = getEnvVariable("NEO4J_PASSWORD")
-    private val cypherPath = resolveCypherLogFileName()
-    private val cypherFileWriter = File(cypherPath).bufferedWriter()
-    private const val uri = "bolt://localhost:7687"
+    private val neo4jAccount = Neo4jUtils.getEnvVariable("NEO4J_ACCOUNT")
+    private val neo4jPassword = Neo4jUtils.getEnvVariable("NEO4J_PASSWORD")
+
+    private const val uri = "neo4j://localhost:7687"
     private val config: Config = Config.builder().withLogging(Logging.slf4j()).build()
     private val driver = GraphDatabase.driver(
         uri, AuthTokens.basic(neo4jAccount, neo4jPassword),
@@ -36,7 +29,7 @@ object Neo4jConnectionService {
 
     fun close() {
         driver.close()
-        cypherFileWriter.close()
+        LogService.close()
     }
 
     /*
@@ -66,11 +59,9 @@ object Neo4jConnectionService {
                     }
                 }
             } catch (e: Exception) {
-                logger.atSevere().withStackTrace(StackSize.FULL)
-                    .withCause(e).log(e.message)
-                logger.atSevere().log("Cypher query: $query")
+                LogService.logException(e)
+                LogService.logError("Cypher query: $query")
             }
-
             return retList.toList()
         }
     }
@@ -79,7 +70,7 @@ object Neo4jConnectionService {
         if (command.uppercase().startsWith("MERGE ") ||
             command.uppercase().startsWith("CREATE ")
         ) {
-            cypherFileWriter.write("$command\n")
+            LogService.recordCypherCommand(command)
         }
         val session = driver.session()
         lateinit var resultString: String
@@ -94,24 +85,13 @@ object Neo4jConnectionService {
                 }!!
                 return resultString.toString()
             } catch (e: Exception) {
-                logger.atSevere().withStackTrace(StackSize.FULL)
-                    .withCause(e).log(e.message)
-                logger.atSevere().log("Cypher command: $command")
+                LogService.logException(e)
+                LogService.logError("Cypher command: $command")
             }
         }
         return ""
     }
 }
-
-fun resolveCurrentTime(): String {
-    val sdf = SimpleDateFormat("dd-MM-yyyy_hh:mm:ss")
-    return sdf.format(Date())
-}
-
-fun resolveCypherLogFileName() =
-    ApplicationPropertiesService.resolvePropertyAsString("neo4j.log.dir") + "/" +
-            ApplicationPropertiesService.resolvePropertyAsString("neo4j.log.file.prefix") +
-            "_" + resolveCurrentTime() + ".log"
 
 /*
 main function for basic integration testing
@@ -119,5 +99,8 @@ main function for basic integration testing
 fun main() {
     val command = "MATCH (n) RETURN COUNT(n)"
     val count = Neo4jConnectionService.executeCypherCommand(command)
-    println(count)
+    LogService.logInfo("Node count $count")
+    // test journaling a fake command
+    LogService.recordCypherCommand("MERGE (n:FAKE_NODE{nid:100}) RETURN n.nid")
+    LogService.close()
 }

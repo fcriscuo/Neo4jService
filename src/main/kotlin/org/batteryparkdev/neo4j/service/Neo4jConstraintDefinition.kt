@@ -1,9 +1,8 @@
 package org.batteryparkdev.neo4j.service
 
-import com.google.common.flogger.FluentLogger
+import org.batteryparkdev.logging.service.LogService
 import java.io.File
 
-val logger: FluentLogger = FluentLogger.forEnclosingClass();
 
 private const val constraintTemplate = "CREATE CONSTRAINT CONSTRAINT_NAME " +
         " IF NOT EXISTS ON (NODE_ABBREV:NODE_LABEL) " +
@@ -18,7 +17,7 @@ fun defineNeo4jConstraint(constraintName:String, nodeAbbreviation:String,
         .replace("NODE_LABEL", nodeLabel)
         .replace("NODE_PROPERTY", nodeProperty)
     Neo4jConnectionService.defineDatabaseConstraint(cypher)
-    logger.atInfo().log("Constraint: $cypher  has been defined")
+    LogService.logInfo("Constraint: $cypher  has been defined")
 }
 
 /*
@@ -29,19 +28,19 @@ fun defineConstraintsFromFile(filename:String) {
     try {
         defineConstraints(File(filename).readLines())
     } catch (e: Exception) {
-        logger.atSevere().log(e.message)
+        LogService.logException(e)
     }
 }
 
 fun defineConstraints(constraints: List<String>) {
     constraints.forEach {
         Neo4jConnectionService.defineDatabaseConstraint(it)
-        logger.atInfo().log("Constraint: $it  has been defined")
+        LogService.logInfo("Constraint: $it  has been defined")
     }
 }
 
 // stand-alone invocation
 fun main(){
-    println(defineNeo4jConstraint("unique_node_id", "n",
-        "TestNode","node_id"))
+   defineNeo4jConstraint("unique_node_id", "n",
+        "TestNode","node_id")
 }
