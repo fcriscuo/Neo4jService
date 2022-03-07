@@ -1,12 +1,9 @@
 package org.batteryparkdev.property.service
 
+import arrow.core.None
 import arrow.core.Option
 import arrow.core.Some
-import arrow.core.None
-import com.google.common.flogger.FluentLogger
-import java.net.URI
-import java.nio.file.Path
-import java.nio.file.Paths
+import org.batteryparkdev.logging.service.LogService
 import java.util.*
 
 /**
@@ -14,7 +11,6 @@ import java.util.*
  */
 abstract class AbstractPropertiesService {
      private val properties: Properties = Properties()
-    private val logger: FluentLogger = FluentLogger.forEnclosingClass();
     fun resolveFrameworkProperties(propertiesFile: String) {
         val stream = AbstractPropertiesService::class.java.getResourceAsStream(propertiesFile)
         properties.load(stream)
@@ -31,17 +27,17 @@ abstract class AbstractPropertiesService {
         when (properties.containsKey(propertyName)) {
             true -> properties.getProperty(propertyName).toString()
             false -> {
-                logger.atWarning().log("$propertyName is an invalid property name ")
+               LogService.logWarn("$propertyName is an invalid property name ")
                 ""
             }
         }
 
     private fun resolvePropertyAsStringOption(propertyName: String): Option<String> =
         if (properties.containsKey(propertyName)) {
-            logger.atInfo().log("Property Value: ${properties.getProperty(propertyName)}")
+           LogService.logInfo("Property Value: ${properties.getProperty(propertyName)}")
             Some(properties.getProperty(propertyName).toString())
         } else {
-            logger.atWarning().log( "$propertyName is an invalid property name " )
+            LogService.logWarn( "$propertyName is an invalid property name " )
             None
         }
 
