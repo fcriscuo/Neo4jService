@@ -4,7 +4,6 @@
 
 package org.batteryparkdev.neo4j.service
 
-import com.google.common.flogger.StackSize
 import org.batteryparkdev.logging.service.LogService
 import org.jetbrains.kotlin.konan.file.use
 import org.neo4j.driver.*
@@ -19,7 +18,6 @@ object Neo4jConnectionService {
 
     private val neo4jAccount = Neo4jUtils.getEnvVariable("NEO4J_ACCOUNT")
     private val neo4jPassword = Neo4jUtils.getEnvVariable("NEO4J_PASSWORD")
-
     private const val uri = "neo4j://localhost:7687"
     private val config: Config = Config.builder().withLogging(Logging.slf4j()).build()
     private val driver = GraphDatabase.driver(
@@ -29,7 +27,7 @@ object Neo4jConnectionService {
 
     fun close() {
         driver.close()
-        LogService.close()
+        Neo4jCypherWriter.close()
     }
 
     /*
@@ -70,7 +68,7 @@ object Neo4jConnectionService {
         if (command.uppercase().startsWith("MERGE ") ||
             command.uppercase().startsWith("CREATE ")
         ) {
-            LogService.recordCypherCommand(command)
+            Neo4jCypherWriter.recordCypherCommand(command)
         }
         val session = driver.session()
         lateinit var resultString: String
@@ -101,6 +99,6 @@ fun main() {
     val count = Neo4jConnectionService.executeCypherCommand(command)
     LogService.logInfo("Node count $count")
     // test journaling a fake command
-    LogService.recordCypherCommand("MERGE (n:FAKE_NODE{nid:100}) RETURN n.nid")
-    LogService.close()
+    Neo4jCypherWriter.recordCypherCommand("MERGE (n:FAKE_NODE{nid:100}) RETURN n.nid")
+    Neo4jCypherWriter.close()
 }
