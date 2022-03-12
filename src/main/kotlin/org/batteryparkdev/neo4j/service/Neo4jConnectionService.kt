@@ -93,6 +93,8 @@ object Neo4jConnectionService {
 
 /*
 main function for basic integration testing
+confirms that a Neo4j connection can be made and cypher command logging
+is working
  */
 fun main() {
     val command = "MATCH (n) RETURN COUNT(n)"

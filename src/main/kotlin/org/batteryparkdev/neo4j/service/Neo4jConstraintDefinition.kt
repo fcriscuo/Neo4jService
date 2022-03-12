@@ -3,7 +3,10 @@ package org.batteryparkdev.neo4j.service
 import org.batteryparkdev.logging.service.LogService
 import java.io.File
 
-
+/*
+Responsible for executing Cypher commands that create constraints
+in the Neo4j database
+ */
 private const val constraintTemplate = "CREATE CONSTRAINT CONSTRAINT_NAME " +
         " IF NOT EXISTS ON (NODE_ABBREV:NODE_LABEL) " +
         " ASSERT NODE_ABBREV.NODE_PROPERTY IS UNIQUE"

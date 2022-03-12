@@ -1,7 +1,7 @@
 package org.batteryparkdev.neo4j.service
 
 import org.batteryparkdev.logging.service.LogService
-import org.batteryparkdev.neo4j.model.NodeIdentifier
+import org.batteryparkdev.placeholder.model.NodeIdentifier
 import java.util.*
 
 object Neo4jUtils {
@@ -12,6 +12,18 @@ object Neo4jUtils {
      */
     fun formatQuotedString(input:String):String =
         "\"" + input +"\""
+
+    /*
+   Function that will quote a Neo4j property value if it
+   is not numeric.
+   Simplifies embedding property values into Cypher statements
+    */
+    fun formatPropertyValue(propertyValue: String): String {
+        return when (propertyValue.toIntOrNull()) {
+            null -> "\"$propertyValue\""
+            else -> propertyValue
+        }
+    }
     /*
     Function to determine if a node has already been loaded into Neo4j
      */
@@ -32,22 +44,21 @@ object Neo4jUtils {
     }
 
     /*
-    Function to delete a Neo4j relationship
+    Utility method to add a secondary label to an existing node if the
+    new label is novel
      */
-    fun deleteNodeRelationshipByName(parentNode: String, childNode: String, relName: String) {
-        val deleteTemplate = "MATCH (:PARENT) -[r:RELATIONSHIP_NAME] ->(:CHILD) DELETE r;"
-        val delCommand = deleteTemplate
-            .replace("PARENT", parentNode)
-            .replace("CHILD", childNode)
-            .replace("RELATIONSHIP_NAME", relName)
-        val countCommand = delCommand
-            .replace("DELETE r", "RETURN COUNT(*)")
-        val beforeCount = Neo4jConnectionService.executeCypherCommand(countCommand)
-        LogService.logInfo("Deleting $parentNode $relName $childNode relationships, before count = $beforeCount")
-        Neo4jConnectionService.executeCypherCommand(delCommand)
-        val afterCount = Neo4jConnectionService.executeCypherCommand(countCommand)
-        LogService.logInfo("After deletion command count = $afterCount")
+    fun addLabelToNode(node: NodeIdentifier) {
+        if (node.isValid().and(node.secondaryLabel.isNotBlank())){
+            val cypher = "MATCH (child:${node.primaryLabel}{${node.idProperty}:" +
+                    " ${formatPropertyValue(node.idValue)} }) " +
+                    " WHERE apoc.label.exists(child,\"${node.secondaryLabel}\")  = false " +
+                    " CALL apoc.create.addLabels(child, [\"${node.secondaryLabel}\"] )" +
+                    " yield node return node"
+            Neo4jConnectionService.executeCypherCommand(cypher)
+        }
     }
+
+
 
     /*
     Function to delete a specified label from a specified node type
@@ -178,17 +189,46 @@ Utility function to determine if a specified node is in the database
                     " child: $child \n relationship: $relationship")
         }
     }
+    /*
+   Function to delete  all Neo4j relationships by a relationship name
+    */
+    fun deleteNodeRelationshipByName(parentNode: String, childNode: String, relName: String) {
+        val deleteTemplate = "MATCH (:PARENT) -[r:RELATIONSHIP_NAME] ->(:CHILD) DELETE r;"
+        val delCommand = deleteTemplate
+            .replace("PARENT", parentNode)
+            .replace("CHILD", childNode)
+            .replace("RELATIONSHIP_NAME", relName)
+        val countCommand = delCommand
+            .replace("DELETE r", "RETURN COUNT(*)")
+        val beforeCount = Neo4jConnectionService.executeCypherCommand(countCommand)
+        LogService.logInfo("Deleting $parentNode $relName $childNode relationships, before count = $beforeCount")
+        Neo4jConnectionService.executeCypherCommand(delCommand)
+        val afterCount = Neo4jConnectionService.executeCypherCommand(countCommand)
+        LogService.logInfo("After deletion command count = $afterCount")
+    }
 
     /*
-    Utility function that will quote a Neo4j property value if it
-    is not numeric.
-    Simplifies creating Cypher statements
+    Utility function to delete a specified relationship between two (2)
+    specified nodes
      */
-    fun formatPropertyValue(propertyValue: String): String {
-        return when (propertyValue.toIntOrNull()) {
-            null -> "\"$propertyValue\""
-            else -> propertyValue
+    fun deleteParentChildRelationship(parent:NodeIdentifier, child:NodeIdentifier,
+                                      relationship: String) {
+        if (nodeExistsPredicate(parent).and(nodeExistsPredicate(child))
+                .and(relationship.isNotBlank())){
+            val cypher = "MATCH (parent:${parent.primaryLabel}), " +
+                    " (child:${child.primaryLabel}) WHERE " +
+                    " parent.${parent.idProperty} = ${formatPropertyValue(parent.idValue)} " +
+                    " AND child.${child.idProperty} = ${formatPropertyValue(child.idValue)} " +
+                    " MATCH  (parent) -[r:$relationship] -> (child) " +
+                    " DELETE r "
+            Neo4jConnectionService.executeCypherCommand(cypher)
+            LogService.logInfo("Deleted $relationship relationship between parent $parent " +
+                    " and child $child")
+        } else {
+            LogService.logWarn("Invalid input(s) parent: $parent \n" +
+                    " child: $child \n relationship: $relationship")
         }
     }
+
 
 }
