@@ -2,7 +2,7 @@ package org.batteryparkdev.placeholder.model
 
 /*
 Represents the properties needed to create a child placeholder node,
-its parent node, and the relationship between them
+an existing parent node, and the relationship between them
 A placeholder node allows for the initial creation of a node as soon
 as its identity occurs in the input data stream. The remaining properties
 for that node can be completed by a subsequent or asynchronous task.
@@ -20,6 +20,10 @@ data class PlaceholderNode(
             .and(blankPropertyType.isNotBlank())
 }
 
+/*
+Represents a data class whose properties contain sufficient information to
+identify an individual node in a Neo4j graph database
+ */
 data class NodeIdentifier(
     val primaryLabel: String,
     val idProperty: String,

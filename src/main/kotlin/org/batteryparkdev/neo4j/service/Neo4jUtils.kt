@@ -24,24 +24,19 @@ object Neo4jUtils {
             else -> propertyValue
         }
     }
+    /*******
+    LABEL-related functions
+    ***** */
+
     /*
-    Function to determine if a node has already been loaded into Neo4j
-     */
-    fun nodeLoadedPredicate(cypherCommand: String): Boolean {
-        if (cypherCommand.contains("PREDICATE", ignoreCase = true)) {
-            try {
-                val predicate = Neo4jConnectionService.executeCypherCommand(cypherCommand)
-                when (predicate.lowercase(Locale.getDefault())) {
-                    "true" -> return true
-                    "false" -> return false
-                }
-            } catch (e: Exception) {
-                LogService.logException(e)
-                return false
-            }
-        }
-        return false
-    }
+   Utility function to add a secondary label to a node if that
+   label is novel
+    */
+    @Deprecated("Use nodeExistsPredicate method instead",
+        replaceWith = ReplaceWith("nodeExistsPredicate(nodeId: NodeIdentifier)"),
+        level = DeprecationLevel.ERROR)
+    fun addSecondaryNodeLabel(nodeId: NodeIdentifier) = addLabelToNode(nodeId)
+
 
     /*
     Utility method to add a secondary label to an existing node if the
@@ -58,10 +53,9 @@ object Neo4jUtils {
         }
     }
 
-
-
     /*
     Function to delete a specified label from a specified node type
+    n.b. May affect >= 1 node(s)
      */
     fun removeNodeLabel(nodeName: String, label: String) {
         val removeLabelTemplate = "MATCH (n:NODENAME) REMOVE n:LABEL RETURN COUNT(n)"
@@ -75,6 +69,21 @@ object Neo4jUtils {
         Neo4jConnectionService.executeCypherCommand(removeLabelCommand)
         val afterCount = Neo4jConnectionService.executeCypherCommand(countLabelCommand)
         LogService.logInfo("Node type: $nodeName, after label removal command count = $afterCount")
+    }
+
+    /*******
+    Node deletion functions
+     ***** */
+
+    /*
+    Function to delete a specific Node
+     */
+    fun deleteNodeById(nodeId: NodeIdentifier) {
+        if (nodeId.isValid()) {
+            val cypher = "MATCH (n:${nodeId.primaryLabel}) WHERE n.${nodeId.idProperty} " +
+                    " = ${formatPropertyValue(nodeId.idValue)} DETACH DELETE(n)"
+            Neo4jConnectionService.executeCypherCommand(cypher)
+        }
     }
 
     // detach and delete specified nodes in database
@@ -94,19 +103,41 @@ object Neo4jUtils {
         )
     }
 
+    /*******
+    Node existence functions
+     ***** */
+
+    /*
+  Function to determine if a node has already been loaded into Neo4j
+   */
+    @Deprecated("Use nodeExistsPredicate method instead",
+        replaceWith = ReplaceWith("nodeExistsPredicate(nodeId: NodeIdentifier)"),
+        level = DeprecationLevel.ERROR)
+    fun nodeLoadedPredicate(cypherCommand: String): Boolean {
+        if (cypherCommand.contains("PREDICATE", ignoreCase = true)) {
+            try {
+                val predicate = Neo4jConnectionService.executeCypherCommand(cypherCommand)
+                when (predicate.lowercase(Locale.getDefault())) {
+                    "true" -> return true
+                    "false" -> return false
+                }
+            } catch (e: Exception) {
+                LogService.logException(e)
+                return false
+            }
+        }
+        return false
+    }
     /*
    Function to determine if a Publication node with a specified
    id exists in the database
     */
+    @Deprecated("Use nodeExistsPredicate method instead",
+        replaceWith = ReplaceWith("nodeExistsPredicate(nodeId: NodeIdentifier)"),
+        level = DeprecationLevel.WARNING)
     fun publicationNodeExistsPredicate(pubId: String): Boolean {
-        val cypher = "OPTIONAL MATCH (pub:Publication{pub_id: $pubId }) " +
-                " RETURN pub IS NOT NULL AS Predicate"
-        return try {
-            Neo4jConnectionService.executeCypherCommand(cypher).toBoolean()
-        } catch (e: Exception) {
-            LogService.logException(e)
-            false
-        }
+        val nodeId = NodeIdentifier("Publication","pub_id", pubId )
+        return nodeExistsPredicate(nodeId)
     }
 /*
 Utility function to determine if a specified node is in the database
@@ -131,44 +162,9 @@ Utility function to determine if a specified node is in the database
         return false
     }
 
-    /*
-    Public function to determine if a Publication node with a specified
-    id and label exists in the database
-     */
-    fun publicationIdAndLabelPredicate(pubId: String,label:String):Boolean =
-        Neo4jConnectionService.executeCypherCommand(
-            "MATCH (pub:Publication{ pub_id: $pubId}) " +
-                    " WHERE apoc.label.exists(pub,\"$label\")" +
-                    " WITH count(*) AS count " +
-                    " CALL apoc.when (count > 0, " +
-                    " \"RETURN true AS bool\",  " +
-                    " \"RETURN false AS bool\", " +
-                    " {count:count}" +
-                    " ) YIELD value " +
-                    " return value.bool "
-        ).toBoolean()
-
-    /*
-    Utility function to add a secondary label to a node if that
-    label is novel
-     */
-    fun addSecondaryNodeLabel(nodeId: NodeIdentifier) {
-        when (nodeId.isValid()) {
-            true -> {
-                LogService.logFine(
-                    "Add Label to ${nodeId.primaryLabel} ${nodeId.primaryLabel}:${nodeId.idValue} " +
-                            "new label = ${nodeId.secondaryLabel}"
-                )
-                val cypher = "MATCH (child:${nodeId.primaryLabel}{${nodeId.primaryLabel}:" +
-                        " ${formatPropertyValue(nodeId.idValue)} }) " +
-                        " WHERE apoc.label.exists(child,\"${nodeId.secondaryLabel}\")  = false " +
-                        " CALL apoc.create.addLabels(child, [\"${nodeId.secondaryLabel}\"] )" +
-                        " yield node return node"
-                Neo4jConnectionService.executeCypherCommand(cypher)
-            }
-            false -> LogService.logWarn("Invalid NodeIdentifier: $nodeId")
-        }
-    }
+    /*******
+    Node relationship functions
+     ***** */
 
     /*
     Utility function to create a parent -[r:Relationship] -> child Neo4j relationship
@@ -211,8 +207,8 @@ Utility function to determine if a specified node is in the database
     Utility function to delete a specified relationship between two (2)
     specified nodes
      */
-    fun deleteParentChildRelationship(parent:NodeIdentifier, child:NodeIdentifier,
-                                      relationship: String) {
+    fun deleteSpecificParentChildRelationship(parent:NodeIdentifier, child:NodeIdentifier,
+                                              relationship: String) {
         if (nodeExistsPredicate(parent).and(nodeExistsPredicate(child))
                 .and(relationship.isNotBlank())){
             val cypher = "MATCH (parent:${parent.primaryLabel}), " +
@@ -229,6 +225,4 @@ Utility function to determine if a specified node is in the database
                     " child: $child \n relationship: $relationship")
         }
     }
-
-
 }

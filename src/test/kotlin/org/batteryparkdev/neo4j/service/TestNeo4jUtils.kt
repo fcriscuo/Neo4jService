@@ -64,11 +64,19 @@ class TestNeo4jUtils {
         LogService.logInfo("Customer John Smith exists = ${Neo4jUtils.nodeExistsPredicate(node2)}")
     }
 
+    fun testDeleteSpecificNode() {
+        restoreGraph()
+        val node1 = NodeIdentifier("Person", "name", "John Smith")
+        Neo4jUtils.deleteNodeById(node1)
+        // check if node1 still exists
+        println("Deleted node exists = ${Neo4jUtils.nodeExistsPredicate(node1)} (should be false)")
+    }
+
     fun testDeleteSpecifiedRelationship() {
         restoreGraph()
         val node1 = NodeIdentifier("Person", "name", "John Smith")
         val node2 = NodeIdentifier("Person", "name", "Betty Roberts")
-        Neo4jUtils.deleteParentChildRelationship(node1, node2,"HAS_FRIEND")
+        Neo4jUtils.deleteSpecificParentChildRelationship(node1, node2,"HAS_FRIEND")
     }
 }
 
@@ -78,6 +86,7 @@ fun main(){
     test.testNodeExistsPredicate()
     test.testFormatPropertyValue()
     test.testAddLabel()
+    test.testDeleteSpecificNode()
     test.testDeleteRelationshipsByName()
     test.testDeleteSpecifiedRelationship()
     test.close()

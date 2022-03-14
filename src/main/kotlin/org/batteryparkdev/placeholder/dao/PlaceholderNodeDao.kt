@@ -4,6 +4,7 @@ import org.batteryparkdev.logging.service.LogService
 import org.batteryparkdev.neo4j.service.Neo4jConnectionService
 import org.batteryparkdev.neo4j.service.Neo4jUtils
 import org.batteryparkdev.neo4j.service.Neo4jUtils.formatPropertyValue
+import org.batteryparkdev.placeholder.model.NodeIdentifier
 import org.batteryparkdev.placeholder.model.PlaceholderNode
 
 object PlaceholderNodeDao {
@@ -83,5 +84,6 @@ object PlaceholderNodeDao {
 // cypher verification test
 fun main() {
     // should be false
-    println("Predicate = ${Neo4jUtils.publicationIdAndLabelPredicate("1234567", "XYZ")}")
+    val nodeId = NodeIdentifier("XYZ","pub_id", "1234567" )
+    println("Predicate = ${Neo4jUtils.nodeExistsPredicate(nodeId)}")
 }
