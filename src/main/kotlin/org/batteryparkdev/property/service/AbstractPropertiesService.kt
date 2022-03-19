@@ -55,7 +55,6 @@ abstract class AbstractPropertiesService {
             0L
         }
 
-
     fun filterProperties(filter: String): List<Pair<String,String>> {
         var tmpList = mutableListOf<Pair<String,String>>()
         properties.keys.filter{ it -> it.toString().contains(filter) }

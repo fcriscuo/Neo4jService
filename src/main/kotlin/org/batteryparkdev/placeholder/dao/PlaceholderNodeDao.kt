@@ -25,7 +25,7 @@ object PlaceholderNodeDao {
     fun persistPlaceholderNode(placeHolder: PlaceholderNode): String {
         if (placeHolder.isValid()) {
             // if the node does not already exist, load it
-            if (!Neo4jUtils.publicationNodeExistsPredicate(placeHolder.childNode.idValue)) {
+            if (!Neo4jUtils.nodeExistsPredicate(placeHolder.childNode)) {
                 val childId = createChildNode(placeHolder)
             }
             createParentChildRelationship(placeHolder)
