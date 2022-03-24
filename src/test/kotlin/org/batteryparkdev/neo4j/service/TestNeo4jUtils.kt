@@ -3,7 +3,8 @@ package org.batteryparkdev.neo4j.service
 import org.batteryparkdev.logging.service.LogService
 import org.batteryparkdev.neo4j.service.Neo4jUtils.detachAndDeleteNodesByName
 import org.batteryparkdev.neo4j.service.Neo4jUtils.formatPropertyValue
-import org.batteryparkdev.placeholder.model.NodeIdentifier
+import org.batteryparkdev.nodeidentifier.model.NodeIdentifier
+import org.batteryparkdev.nodeidentifier.model.RelationshipDefinition
 
 class TestNeo4jUtils {
 
@@ -49,7 +50,8 @@ class TestNeo4jUtils {
     fun deleteNodeRelationshipByName(parentNode: String, childNode: String, relName: String)
      */
     fun testDeleteRelationshipsByName() {
-        Neo4jUtils.deleteNodeRelationshipByName("Person", "Person", "HAS_FRIEND")
+        val relType = "HAS_FRIEND"
+        Neo4jUtils.deleteRelationshipByType(relType)
     }
 
     fun testAddLabel() {
@@ -72,12 +74,9 @@ class TestNeo4jUtils {
         println("Deleted node exists = ${Neo4jUtils.nodeExistsPredicate(node1)} (should be false)")
     }
 
-    fun testDeleteSpecifiedRelationship() {
-        restoreGraph()
-        val node1 = NodeIdentifier("Person", "name", "John Smith")
-        val node2 = NodeIdentifier("Person", "name", "Betty Roberts")
-        Neo4jUtils.deleteSpecificParentChildRelationship(node1, node2,"HAS_FRIEND")
-    }
+
+
+
 }
 
 fun main(){
@@ -88,6 +87,5 @@ fun main(){
     test.testAddLabel()
     test.testDeleteSpecificNode()
     test.testDeleteRelationshipsByName()
-    test.testDeleteSpecifiedRelationship()
     test.close()
 }

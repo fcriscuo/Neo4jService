@@ -1,7 +1,9 @@
 package org.batteryparkdev.neo4j.service
 
 import org.batteryparkdev.logging.service.LogService
-import org.batteryparkdev.placeholder.model.NodeIdentifier
+import org.batteryparkdev.nodeidentifier.dao.NodeIdentifierDao
+import org.batteryparkdev.nodeidentifier.model.NodeIdentifier
+import org.batteryparkdev.nodeidentifier.model.RelationshipDefinition
 import java.util.*
 
 object Neo4jUtils {
@@ -106,7 +108,6 @@ object Neo4jUtils {
     /*******
     Node existence functions
      ***** */
-
     /*
   Function to determine if a node has already been loaded into Neo4j
    */
@@ -162,67 +163,26 @@ Utility function to determine if a specified node is in the database
         return false
     }
 
-    /*******
-    Node relationship functions
-     ***** */
-
     /*
     Utility function to create a parent -[r:Relationship] -> child Neo4j relationship
      */
+    @Deprecated("Use defineRelationship method instead")
     fun createParentChildRelationship(parent:NodeIdentifier, child:NodeIdentifier,
                                       relationship: String) {
-        if (nodeExistsPredicate(parent).and(nodeExistsPredicate(child))
-                .and(relationship.isNotBlank())){
-            val cypher = "MATCH (parent:${parent.primaryLabel}), " +
-                    " (child:${child.primaryLabel}) WHERE " +
-                    " parent.${parent.idProperty} = ${formatPropertyValue(parent.idValue)} " +
-                    " AND child.${child.idProperty} = ${formatPropertyValue(child.idValue)} " +
-                    " MERGE (parent) -[r:$relationship] -> (child) " +
-                    " RETURN r "
-            Neo4jConnectionService.executeCypherCommand(cypher)
-        } else {
-            LogService.logWarn("Invalid input(s) parent: $parent \n" +
-                    " child: $child \n relationship: $relationship")
-        }
+        NodeIdentifierDao.defineRelationship(RelationshipDefinition(parent,child,relationship))
     }
     /*
    Function to delete  all Neo4j relationships by a relationship name
     */
-    fun deleteNodeRelationshipByName(parentNode: String, childNode: String, relName: String) {
-        val deleteTemplate = "MATCH (:PARENT) -[r:RELATIONSHIP_NAME] ->(:CHILD) DELETE r;"
-        val delCommand = deleteTemplate
-            .replace("PARENT", parentNode)
-            .replace("CHILD", childNode)
-            .replace("RELATIONSHIP_NAME", relName)
-        val countCommand = delCommand
-            .replace("DELETE r", "RETURN COUNT(*)")
-        val beforeCount = Neo4jConnectionService.executeCypherCommand(countCommand)
-        LogService.logInfo("Deleting $parentNode $relName $childNode relationships, before count = $beforeCount")
-        Neo4jConnectionService.executeCypherCommand(delCommand)
-        val afterCount = Neo4jConnectionService.executeCypherCommand(countCommand)
-        LogService.logInfo("After deletion command count = $afterCount")
+    @Deprecated("Use deleteRelationshipByType method instead")
+    fun deleteNodeRelationshipByName(parentNode: String, childNode: String, relType: String) {
+        deleteRelationshipsByType(relType)
     }
 
-    /*
-    Utility function to delete a specified relationship between two (2)
-    specified nodes
-     */
-    fun deleteSpecificParentChildRelationship(parent:NodeIdentifier, child:NodeIdentifier,
-                                              relationship: String) {
-        if (nodeExistsPredicate(parent).and(nodeExistsPredicate(child))
-                .and(relationship.isNotBlank())){
-            val cypher = "MATCH (parent:${parent.primaryLabel}), " +
-                    " (child:${child.primaryLabel}) WHERE " +
-                    " parent.${parent.idProperty} = ${formatPropertyValue(parent.idValue)} " +
-                    " AND child.${child.idProperty} = ${formatPropertyValue(child.idValue)} " +
-                    " MATCH  (parent) -[r:$relationship] -> (child) " +
-                    " DELETE r "
-            Neo4jConnectionService.executeCypherCommand(cypher)
-            LogService.logInfo("Deleted $relationship relationship between parent $parent " +
-                    " and child $child")
-        } else {
-            LogService.logWarn("Invalid input(s) parent: $parent \n" +
-                    " child: $child \n relationship: $relationship")
-        }
+    fun deleteRelationshipsByType(relType: String) {
+        Neo4jConnectionService.executeCypherCommand(
+            "MATCH () -[r:$relType]-() DELETE r;"
+        )
+        LogService.logInfo("Deleted all occurrences of relationship type: $relType")
     }
 }
