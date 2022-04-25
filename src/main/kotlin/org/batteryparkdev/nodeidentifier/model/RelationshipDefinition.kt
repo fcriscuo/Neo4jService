@@ -34,7 +34,6 @@ data class RelationshipDefinition(
             "${Neo4jUtils.formatPropertyValue(childNode.idValue)} " +
             " MATCH  (parent) -[r:${relationshipType}] -> (child) " +
             " DELETE r "
-
 }
 
 data class RelationshipProperty(

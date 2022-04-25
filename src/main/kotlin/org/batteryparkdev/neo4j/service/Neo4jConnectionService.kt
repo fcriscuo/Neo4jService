@@ -18,7 +18,7 @@ object Neo4jConnectionService {
 
     private val neo4jAccount = Neo4jUtils.getEnvVariable("NEO4J_ACCOUNT")
     private val neo4jPassword = Neo4jUtils.getEnvVariable("NEO4J_PASSWORD")
-    private const val uri = "neo4j://localhost:7687"
+    private val uri = Neo4jUtils.getEnvVariable("NEO4J_URI")
     private val config: Config = Config.builder().withLogging(Logging.slf4j()).build()
     private val driver = GraphDatabase.driver(
         uri, AuthTokens.basic(neo4jAccount, neo4jPassword),
@@ -97,10 +97,10 @@ confirms that a Neo4j connection can be made and cypher command logging
 is working
  */
 fun main() {
+    // test journaling a fake command
+    Neo4jCypherWriter.recordCypherCommand("MERGE (n:FAKE_NODE{nid:100}) RETURN n.nid")
     val command = "MATCH (n) RETURN COUNT(n)"
     val count = Neo4jConnectionService.executeCypherCommand(command)
     LogService.logInfo("Node count $count")
-    // test journaling a fake command
-    Neo4jCypherWriter.recordCypherCommand("MERGE (n:FAKE_NODE{nid:100}) RETURN n.nid")
     Neo4jCypherWriter.close()
 }

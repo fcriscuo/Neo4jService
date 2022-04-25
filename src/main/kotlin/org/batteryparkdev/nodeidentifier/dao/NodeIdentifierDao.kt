@@ -3,7 +3,6 @@ package org.batteryparkdev.nodeidentifier.dao
 import org.batteryparkdev.logging.service.LogService
 import org.batteryparkdev.neo4j.service.Neo4jConnectionService
 import org.batteryparkdev.neo4j.service.Neo4jUtils
-import org.batteryparkdev.neo4j.service.Neo4jUtils.formatPropertyValue
 import org.batteryparkdev.nodeidentifier.model.NodeIdentifier
 import org.batteryparkdev.nodeidentifier.model.RelationshipDefinition
 

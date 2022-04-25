@@ -51,7 +51,7 @@ class TestNeo4jUtils {
      */
     fun testDeleteRelationshipsByName() {
         val relType = "HAS_FRIEND"
-        Neo4jUtils.deleteRelationshipByType(relType)
+        Neo4jUtils.deleteRelationshipsByType(relType)
     }
 
     fun testAddLabel() {
