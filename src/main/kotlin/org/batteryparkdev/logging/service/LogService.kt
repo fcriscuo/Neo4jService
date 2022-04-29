@@ -3,7 +3,6 @@ package org.batteryparkdev.logging.service
 
 import mu.KotlinLogging
 
-
 /*
 Responsible for providing a consistent logging structure for all components
  */

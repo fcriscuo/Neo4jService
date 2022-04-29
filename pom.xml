@@ -19,6 +19,7 @@
         <apache.commons.lang3.version>3.12.0</apache.commons.lang3.version>
         <apache.commons.io.version>2.11.0</apache.commons.io.version>
         <apache.commons.csv.version>1.9.0</apache.commons.csv.version>
+        <apache.commons.config.version>2.7</apache.commons.config.version>
         <guava.version>31.0.1-jre</guava.version>
         <neo4j.version>4.4.4</neo4j.version>
         <neo4j.driver.version>4.4.3</neo4j.driver.version>
@@ -31,6 +32,13 @@
     </properties>
 
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-configuration2 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
+            <version>${apache.commons.config.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-kotlin</artifactId>

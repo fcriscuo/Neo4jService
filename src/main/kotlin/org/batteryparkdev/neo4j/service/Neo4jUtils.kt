@@ -8,7 +8,6 @@ import java.util.*
 
 object Neo4jUtils {
 
-    fun getEnvVariable(varname:String):String = System.getenv(varname) ?: "undefined"
     /*
     Function to simplify quoting a String value for Cypher input
      */
@@ -27,8 +26,8 @@ object Neo4jUtils {
         }
     }
     /*******
-    LABEL-related functions
-    ***** */
+    LABEL related functions
+    ******/
 
     /*
    Utility function to add a secondary label to a node if that
@@ -75,7 +74,7 @@ object Neo4jUtils {
 
     /*******
     Node deletion functions
-     ***** */
+     *******/
 
     /*
     Function to delete a specific Node
@@ -107,7 +106,7 @@ object Neo4jUtils {
 
     /*******
     Node existence functions
-     ***** */
+     ******/
     /*
   Function to determine if a node has already been loaded into Neo4j
    */

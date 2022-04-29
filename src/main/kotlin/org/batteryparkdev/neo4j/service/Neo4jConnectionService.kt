@@ -5,6 +5,7 @@
 package org.batteryparkdev.neo4j.service
 
 import org.batteryparkdev.logging.service.LogService
+import org.batteryparkdev.property.service.ConfigurationPropertiesService
 import org.jetbrains.kotlin.konan.file.use
 import org.neo4j.driver.*
 
@@ -16,9 +17,9 @@ import org.neo4j.driver.*
  */
 object Neo4jConnectionService {
 
-    private val neo4jAccount = Neo4jUtils.getEnvVariable("NEO4J_ACCOUNT")
-    private val neo4jPassword = Neo4jUtils.getEnvVariable("NEO4J_PASSWORD")
-    private val uri = Neo4jUtils.getEnvVariable("NEO4J_URI")
+    private val neo4jAccount = ConfigurationPropertiesService.getEnvVariable("NEO4J_ACCOUNT")
+    private val neo4jPassword = ConfigurationPropertiesService.getEnvVariable("NEO4J_PASSWORD")
+    private val uri = ConfigurationPropertiesService.getEnvVariable("NEO4J_URI")
     private val config: Config = Config.builder().withLogging(Logging.slf4j()).build()
     private val driver = GraphDatabase.driver(
         uri, AuthTokens.basic(neo4jAccount, neo4jPassword),
