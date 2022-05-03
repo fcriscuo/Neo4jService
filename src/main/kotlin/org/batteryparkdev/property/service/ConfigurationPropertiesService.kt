@@ -14,6 +14,15 @@ object ConfigurationPropertiesService
 
         fun getEnvVariable(varname:String):String = System.getenv(varname) ?: "undefined"
 
+        fun getConfigPropertyAsString(propertyName:String): String =
+            config.getString(propertyName,"")
+
+        fun getConfigPropertyAsBoolean(propertyName: String):Boolean =
+            config.getBoolean(propertyName,false)
+
+        fun getConfigPropertyAsInt(propertyName: String): Int =
+            config.getInt(propertyName, 0)
+
         fun resolveCosmicCompleteFileLocation(filename: String): String =
             when (getEnvVariable("NEO4J_URI").contains("localhost")) {
                 true -> config.getString("localhost.cosmic.data.directory").plus("/")
@@ -53,26 +62,16 @@ object ConfigurationPropertiesService
         fun cypherLoggingStatus():Boolean =
             config.getBoolean("log.cypher.commands")
 
-}
+        private fun resolveSampleFileProperty(fileProperty: String): String =
+            resolveCosmicSampleFileLocation(fileProperty)
 
-fun main() {
-    // test for complete Cosmic file
-    val localCompleteFilename = ConfigurationPropertiesService.resolveCosmicCompleteFileLocation("CosmicCompleteCNA.tsv")
-    when (File(localCompleteFilename).exists()) {
-        true -> println("$localCompleteFilename exists")
-        false -> println("ERROR: $localCompleteFilename does NOT exist")
+        private fun resolveCompleteFileProperty(fileProperty: String): String =
+            ConfigurationPropertiesService.resolveCosmicCompleteFileLocation(fileProperty)
+
+        fun resolveCosmicDataFileProperty(runMode: String, fileProperty: String): String =
+            when (runMode.lowercase().equals("complete")) {
+                true -> resolveCompleteFileProperty(fileProperty)
+                false -> resolveSampleFileProperty(fileProperty)
+            }
+
     }
-    val sampleCompleteFilename = ConfigurationPropertiesService.resolveCosmicSampleFileLocation("CosmicCompleteCNA.tsv")
-    when (File(sampleCompleteFilename).exists()) {
-        true -> println("$sampleCompleteFilename exists")
-        false -> println("ERROR: $sampleCompleteFilename does NOT exist")
-    }
-    if (ConfigurationPropertiesService.cypherLoggingStatus()) {
-        println("Cypher log file: ${ConfigurationPropertiesService.resolveCypherLogFilename()}")
-    } else {
-        println("Cypher command logging is turned off")
-    }
-
-
-
-}

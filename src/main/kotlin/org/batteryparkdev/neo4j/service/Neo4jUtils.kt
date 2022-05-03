@@ -75,7 +75,6 @@ object Neo4jUtils {
     /*******
     Node deletion functions
      *******/
-
     /*
     Function to delete a specific Node
      */
