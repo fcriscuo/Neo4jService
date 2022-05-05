@@ -9,8 +9,12 @@ import java.util.*
 object Neo4jUtils {
 
     /*
-    Function to simplify quoting a String value for Cypher input
+    Function to simplify quoting a String property value for Cypher input
+    Deprecated because quoting is not necessary for numeric properties
      */
+    @Deprecated("Use formatPropertyValue instead",
+        replaceWith = ReplaceWith("formatPropertyValue(propertyValue: value)"),
+        level = DeprecationLevel.ERROR)
     fun formatQuotedString(input:String):String =
         "\"" + input +"\""
 
