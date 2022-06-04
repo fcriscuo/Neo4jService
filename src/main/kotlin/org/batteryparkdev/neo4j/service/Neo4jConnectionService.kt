@@ -20,6 +20,7 @@ object Neo4jConnectionService {
     private val neo4jAccount = ConfigurationPropertiesService.getEnvVariable("NEO4J_ACCOUNT")
     private val neo4jPassword = ConfigurationPropertiesService.getEnvVariable("NEO4J_PASSWORD")
     private val uri = ConfigurationPropertiesService.getEnvVariable("NEO4J_URI")
+    private val logCypher = ConfigurationPropertiesService.getEnvVariable("NEO4J_LOG_CYPHER")
     private val config: Config = Config.builder().withLogging(Logging.slf4j()).build()
     private val driver = GraphDatabase.driver(
         uri, AuthTokens.basic(neo4jAccount, neo4jPassword),
@@ -66,9 +67,9 @@ object Neo4jConnectionService {
     }
 
     fun executeCypherCommand(command: String): String {
-        if (command.uppercase().startsWith("MERGE ") ||
-            command.uppercase().startsWith("CREATE ")
-        ) {
+
+        if (logCypher == "TRUE")
+         {
             Neo4jCypherWriter.recordCypherCommand(command)
         }
         val session = driver.session()

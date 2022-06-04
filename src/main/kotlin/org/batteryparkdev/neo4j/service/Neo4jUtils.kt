@@ -37,8 +37,8 @@ object Neo4jUtils {
    Utility function to add a secondary label to a node if that
    label is novel
     */
-    @Deprecated("Use nodeExistsPredicate method instead",
-        replaceWith = ReplaceWith("nodeExistsPredicate(nodeId: NodeIdentifier)"),
+    @Deprecated("Use addLabelToNode method instead",
+        replaceWith = ReplaceWith("addLabelToNode(nodeId: NodeIdentifier)"),
         level = DeprecationLevel.ERROR)
     fun addSecondaryNodeLabel(nodeId: NodeIdentifier) = addLabelToNode(nodeId)
 
