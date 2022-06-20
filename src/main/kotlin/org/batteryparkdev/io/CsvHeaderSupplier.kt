@@ -43,7 +43,7 @@ class CsvHeaderSupplier(aPath: Path) : Supplier<Map<String, Int>?> {
     }
 }
 
-fun main(args: Array<String>) {
+fun main() {
     val aPath = Paths.get("./data/sample_CosmicMutantExport.tsv")
     val headerMap = CsvHeaderSupplier(aPath).get()
     headerMap!!.keys.forEach(Consumer { x: String? -> println(x) })

@@ -11,8 +11,10 @@ fun main(args: Array<String>) {
     }
     val tsvPath = Paths.get("./data/sample_CosmicMutantExport.tsv")
     println("+++++++ Test Process TSV file: ${tsvPath.toString()}")
+    var rowNumber = 0
     CSVRecordSupplier(tsvPath).get().forEach {
-        println("TSV record: ${it.get("LEGACY_MUTATION_ID")}")
+        rowNumber += 1
+        println("TSV record: $rowNumber  ${it.get("Gene name")}")
     }
 
 }

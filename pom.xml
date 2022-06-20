@@ -12,7 +12,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kotlin.version>1.6.20-M1</kotlin.version>
+        <kotlin.version>1.7.0</kotlin.version>
         <kotlin.code.style>official</kotlin.code.style>
         <junit.version>4.13.2</junit.version>
         <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
@@ -20,13 +20,13 @@
         <apache.commons.io.version>2.11.0</apache.commons.io.version>
         <apache.commons.csv.version>1.9.0</apache.commons.csv.version>
         <apache.commons.config.version>2.7</apache.commons.config.version>
-        <guava.version>31.0.1-jre</guava.version>
-        <neo4j.version>4.4.4</neo4j.version>
-        <neo4j.driver.version>4.4.3</neo4j.driver.version>
+        <guava.version>31.1-jre</guava.version>
+        <neo4j.version>4.4.7</neo4j.version>
+        <neo4j.driver.version>4.4.6</neo4j.driver.version>
         <cfg4j.version>4.4.1</cfg4j.version>
 <!--        <kotlin.version>1.6.10</kotlin.version>-->
         <kotlintest.version>1.5.21</kotlintest.version>
-        <arrow-kt.version>1.0.1</arrow-kt.version>
+        <arrow-kt.version>1.1.2</arrow-kt.version>
         <maven.compiler.source>15</maven.compiler.source>
         <maven.compiler.target>15</maven.compiler.target>
     </properties>
@@ -42,7 +42,7 @@
         <dependency>
             <groupId>io.github.cdimascio</groupId>
             <artifactId>dotenv-kotlin</artifactId>
-            <version>6.2.2</version>
+            <version>6.3.1</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-csv -->
         <dependency>
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
-            <version>1.6.0</version>
+            <version>1.6.2</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -70,18 +70,18 @@
         <dependency>
             <groupId>io.github.microutils</groupId>
             <artifactId>kotlin-logging-jvm</artifactId>
-            <version>2.1.20</version>
+            <version>2.1.23</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.10</version>
+            <version>1.2.11</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-util-io -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-util-io</artifactId>
-            <version>1.6.10</version>
+            <version>1.7.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -115,7 +115,7 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-ogm-core</artifactId>
-            <version>3.2.28</version>
+            <version>3.2.35</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j-kernel -->
         <dependency>
@@ -140,7 +140,7 @@
         <dependency>
             <groupId>io.arrow-kt</groupId>
             <artifactId>arrow-annotations</artifactId>
-            <version>1.0.1</version>
+            <version>1.1.2</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/io.arrow-kt/arrow-core-data -->
         <dependency>
