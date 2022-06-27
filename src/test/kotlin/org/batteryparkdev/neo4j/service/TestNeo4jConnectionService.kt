@@ -13,8 +13,11 @@ confirms that a Neo4j connection can be made and cypher command logging
 is working
  */
 fun main() {
-    // test journaling a fake command
-    Neo4jCypherWriter.recordCypherCommand("MERGE (n:FAKE_NODE{nid:100}) RETURN n.nid")
+    //Display database name
+    println("Connected to database name: ${Neo4jConnectionService.getDatabaseName()}")
+    // create a test node
+    val geneCount = Neo4jConnectionService.executeCypherCommand("MERGE (g:Gene{gene_name:'BRCA1'}) RETURN COUNT(g)")
+    Neo4jUtils.detachAndDeleteNodesByName("Gene")
     val command = "MATCH (n) RETURN COUNT(n)"
     val count = Neo4jConnectionService.executeCypherCommand(command)
     LogService.logInfo("Node count $count")

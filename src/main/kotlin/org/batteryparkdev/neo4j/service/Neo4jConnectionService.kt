@@ -22,6 +22,7 @@ object Neo4jConnectionService {
     private val uri = ConfigurationPropertiesService.getEnvVariable("NEO4J_URI")
     private val logCypher = ConfigurationPropertiesService.getEnvVariable("NEO4J_LOG_CYPHER")
     private val config: Config = Config.builder().withLogging(Logging.slf4j()).build()
+    private val database  = ConfigurationPropertiesService.getEnvVariable("NEO4J_DATABASE")
     private val driver = GraphDatabase.driver(
         uri, AuthTokens.basic(neo4jAccount, neo4jPassword),
         config
@@ -32,11 +33,14 @@ object Neo4jConnectionService {
         Neo4jCypherWriter.close()
     }
 
+    // expose the current database name
+    fun getDatabaseName():String = database
+
     /*
     Constraint definitions do not return a result
      */
     fun defineDatabaseConstraint(command: String) {
-        val session: Session = driver.session()
+        val session: Session = driver.session(SessionConfig.forDatabase(database))
         session.use {
             session.writeTransaction { tx ->
                 tx.run(command)
@@ -49,7 +53,7 @@ object Neo4jConnectionService {
      */
     fun executeCypherQuery(query: String): List<Record> {
         val retList = mutableListOf<Record>()
-        val session = driver.session()
+        val session = driver.session(SessionConfig.forDatabase(database))
         session.use {
             try {
                 session.readTransaction { tx ->
@@ -67,12 +71,11 @@ object Neo4jConnectionService {
     }
 
     fun executeCypherCommand(command: String): String {
-
         if (logCypher == "TRUE")
          {
             Neo4jCypherWriter.recordCypherCommand(command)
         }
-        val session = driver.session()
+        val session = driver.session(SessionConfig.forDatabase(database))
         lateinit var resultString: String
         session.use {
             try {
