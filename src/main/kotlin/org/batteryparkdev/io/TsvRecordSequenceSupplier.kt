@@ -7,6 +7,7 @@ import org.batteryparkdev.logging.service.LogService
 import java.io.FileReader
 import java.io.IOException
 import java.nio.charset.Charset
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.function.Consumer
@@ -20,9 +21,10 @@ class TsvRecordSequenceSupplier : Supplier<Sequence<CSVRecord>> {
 
     constructor (aPath: Path) {
         try {
-            FileReader(aPath.toString()).use {
+            val reader = Files.newBufferedReader(aPath)
+            reader.use {
                 val parser = CSVParser.parse(
-                    aPath.toFile(), Charset.defaultCharset(),
+                    reader,
                     CSVFormat.TDF.withFirstRecordAsHeader().withQuote(null).withIgnoreEmptyLines()
                 )
                 recordSequence = parser.records.asSequence()
@@ -63,9 +65,9 @@ class TsvRecordSequenceSupplier : Supplier<Sequence<CSVRecord>> {
 }
 
 fun main(args: Array<String>) {
-    val filePathName = if (args.isNotEmpty()) args[0] else "./data/sample_CosmicMutantExportCensus.tsv"
+    val filePathName = if (args.isNotEmpty()) args[0] else "/Volumes/SSD870/COSMIC_rel96/Cancer_Gene_Census_Hallmarks_Of_Cancer.tsv"
     val aPath = Paths.get(filePathName)
-   println("Processing delimited file: $filePathName")
+    println("Processing delimited file: $filePathName")
     val headerMap = CsvHeaderSupplier(aPath).get()
     TsvRecordSequenceSupplier(aPath).get()
         .take(100)

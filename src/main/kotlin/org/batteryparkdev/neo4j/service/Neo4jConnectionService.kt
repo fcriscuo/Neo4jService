@@ -5,6 +5,7 @@
 package org.batteryparkdev.neo4j.service
 
 import org.batteryparkdev.logging.service.LogService
+import org.batteryparkdev.property.service.ConfigurationPropertiesService
 import org.jetbrains.kotlin.konan.file.use
 import org.neo4j.driver.*
 
@@ -16,10 +17,12 @@ import org.neo4j.driver.*
  */
 object Neo4jConnectionService {
 
-    private val neo4jAccount = Neo4jUtils.getEnvVariable("NEO4J_ACCOUNT")
-    private val neo4jPassword = Neo4jUtils.getEnvVariable("NEO4J_PASSWORD")
-    private const val uri = "neo4j://localhost:7687"
+    private val neo4jAccount = ConfigurationPropertiesService.getEnvVariable("NEO4J_ACCOUNT")
+    private val neo4jPassword = ConfigurationPropertiesService.getEnvVariable("NEO4J_PASSWORD")
+    private val uri = ConfigurationPropertiesService.getEnvVariable("NEO4J_URI")
+    private val logCypher = ConfigurationPropertiesService.getEnvVariable("NEO4J_LOG_CYPHER")
     private val config: Config = Config.builder().withLogging(Logging.slf4j()).build()
+    private val database  = ConfigurationPropertiesService.getEnvVariable("NEO4J_DATABASE")
     private val driver = GraphDatabase.driver(
         uri, AuthTokens.basic(neo4jAccount, neo4jPassword),
         config
@@ -30,11 +33,14 @@ object Neo4jConnectionService {
         Neo4jCypherWriter.close()
     }
 
+    // expose the current database name
+    fun getDatabaseName():String = database
+
     /*
     Constraint definitions do not return a result
      */
     fun defineDatabaseConstraint(command: String) {
-        val session: Session = driver.session()
+        val session: Session = driver.session(SessionConfig.forDatabase(database))
         session.use {
             session.writeTransaction { tx ->
                 tx.run(command)
@@ -47,7 +53,7 @@ object Neo4jConnectionService {
      */
     fun executeCypherQuery(query: String): List<Record> {
         val retList = mutableListOf<Record>()
-        val session = driver.session()
+        val session = driver.session(SessionConfig.forDatabase(database))
         session.use {
             try {
                 session.readTransaction { tx ->
@@ -65,12 +71,11 @@ object Neo4jConnectionService {
     }
 
     fun executeCypherCommand(command: String): String {
-        if (command.uppercase().startsWith("MERGE ") ||
-            command.uppercase().startsWith("CREATE ")
-        ) {
+        if (logCypher == "TRUE")
+         {
             Neo4jCypherWriter.recordCypherCommand(command)
         }
-        val session = driver.session()
+        val session = driver.session(SessionConfig.forDatabase(database))
         lateinit var resultString: String
         session.use {
             try {
@@ -91,14 +96,3 @@ object Neo4jConnectionService {
     }
 }
 
-/*
-main function for basic integration testing
- */
-fun main() {
-    val command = "MATCH (n) RETURN COUNT(n)"
-    val count = Neo4jConnectionService.executeCypherCommand(command)
-    LogService.logInfo("Node count $count")
-    // test journaling a fake command
-    Neo4jCypherWriter.recordCypherCommand("MERGE (n:FAKE_NODE{nid:100}) RETURN n.nid")
-    Neo4jCypherWriter.close()
-}

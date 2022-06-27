@@ -1,56 +1,66 @@
 package org.batteryparkdev.neo4j.service
 
 import org.batteryparkdev.logging.service.LogService
-import org.batteryparkdev.neo4j.model.NodeIdentifier
+import org.batteryparkdev.nodeidentifier.dao.NodeIdentifierDao
+import org.batteryparkdev.nodeidentifier.model.NodeIdentifier
+import org.batteryparkdev.nodeidentifier.model.RelationshipDefinition
 import java.util.*
 
 object Neo4jUtils {
 
-    fun getEnvVariable(varname:String):String = System.getenv(varname) ?: "undefined"
     /*
-    Function to simplify quoting a String value for Cypher input
+    Function to simplify quoting a String property value for Cypher input
+    Deprecated because quoting is not necessary for numeric properties
      */
+    @Deprecated("Use formatPropertyValue instead",
+        replaceWith = ReplaceWith("formatPropertyValue(propertyValue: value)"),
+        level = DeprecationLevel.ERROR)
     fun formatQuotedString(input:String):String =
         "\"" + input +"\""
-    /*
-    Function to determine if a node has already been loaded into Neo4j
-     */
-    fun nodeLoadedPredicate(cypherCommand: String): Boolean {
-        if (cypherCommand.contains("PREDICATE", ignoreCase = true)) {
-            try {
-                val predicate = Neo4jConnectionService.executeCypherCommand(cypherCommand)
-                when (predicate.lowercase(Locale.getDefault())) {
-                    "true" -> return true
-                    "false" -> return false
-                }
-            } catch (e: Exception) {
-                LogService.logException(e)
-                return false
-            }
-        }
-        return false
-    }
 
     /*
-    Function to delete a Neo4j relationship
+   Function that will quote a Neo4j property value if it
+   is not numeric.
+   Simplifies embedding property values into Cypher statements
+    */
+    fun formatPropertyValue(propertyValue: String): String {
+        return when (propertyValue.toIntOrNull()) {
+            null -> "\"$propertyValue\""
+            else -> propertyValue
+        }
+    }
+    /*******
+    LABEL related functions
+    ******/
+
+    /*
+   Utility function to add a secondary label to a node if that
+   label is novel
+    */
+    @Deprecated("Use addLabelToNode method instead",
+        replaceWith = ReplaceWith("addLabelToNode(nodeId: NodeIdentifier)"),
+        level = DeprecationLevel.ERROR)
+    fun addSecondaryNodeLabel(nodeId: NodeIdentifier) = addLabelToNode(nodeId)
+
+
+    /*
+    Utility method to add a secondary label to an existing node if the
+    new label is novel
      */
-    fun deleteNodeRelationshipByName(parentNode: String, childNode: String, relName: String) {
-        val deleteTemplate = "MATCH (:PARENT) -[r:RELATIONSHIP_NAME] ->(:CHILD) DELETE r;"
-        val delCommand = deleteTemplate
-            .replace("PARENT", parentNode)
-            .replace("CHILD", childNode)
-            .replace("RELATIONSHIP_NAME", relName)
-        val countCommand = delCommand
-            .replace("DELETE r", "RETURN COUNT(*)")
-        val beforeCount = Neo4jConnectionService.executeCypherCommand(countCommand)
-        LogService.logInfo("Deleting $parentNode $relName $childNode relationships, before count = $beforeCount")
-        Neo4jConnectionService.executeCypherCommand(delCommand)
-        val afterCount = Neo4jConnectionService.executeCypherCommand(countCommand)
-        LogService.logInfo("After deletion command count = $afterCount")
+    fun addLabelToNode(node: NodeIdentifier) {
+        if (node.isValid().and(node.secondaryLabel.isNotBlank())){
+            val cypher = "MATCH (child:${node.primaryLabel}{${node.idProperty}:" +
+                    " ${formatPropertyValue(node.idValue)} }) " +
+                    " WHERE apoc.label.exists(child,\"${node.secondaryLabel}\")  = false " +
+                    " CALL apoc.create.addLabels(child, [\"${node.secondaryLabel}\"] )" +
+                    " yield node return node"
+            Neo4jConnectionService.executeCypherCommand(cypher)
+        }
     }
 
     /*
     Function to delete a specified label from a specified node type
+    n.b. May affect >= 1 node(s)
      */
     fun removeNodeLabel(nodeName: String, label: String) {
         val removeLabelTemplate = "MATCH (n:NODENAME) REMOVE n:LABEL RETURN COUNT(n)"
@@ -64,6 +74,20 @@ object Neo4jUtils {
         Neo4jConnectionService.executeCypherCommand(removeLabelCommand)
         val afterCount = Neo4jConnectionService.executeCypherCommand(countLabelCommand)
         LogService.logInfo("Node type: $nodeName, after label removal command count = $afterCount")
+    }
+
+    /*******
+    Node deletion functions
+     *******/
+    /*
+    Function to delete a specific Node
+     */
+    fun deleteNodeById(nodeId: NodeIdentifier) {
+        if (nodeId.isValid()) {
+            val cypher = "MATCH (n:${nodeId.primaryLabel}) WHERE n.${nodeId.idProperty} " +
+                    " = ${formatPropertyValue(nodeId.idValue)} DETACH DELETE(n)"
+            Neo4jConnectionService.executeCypherCommand(cypher)
+        }
     }
 
     // detach and delete specified nodes in database
@@ -83,19 +107,40 @@ object Neo4jUtils {
         )
     }
 
+    /*******
+    Node existence functions
+     ******/
+    /*
+  Function to determine if a node has already been loaded into Neo4j
+   */
+    @Deprecated("Use nodeExistsPredicate method instead",
+        replaceWith = ReplaceWith("nodeExistsPredicate(nodeId: NodeIdentifier)"),
+        level = DeprecationLevel.ERROR)
+    fun nodeLoadedPredicate(cypherCommand: String): Boolean {
+        if (cypherCommand.contains("PREDICATE", ignoreCase = true)) {
+            try {
+                val predicate = Neo4jConnectionService.executeCypherCommand(cypherCommand)
+                when (predicate.lowercase(Locale.getDefault())) {
+                    "true" -> return true
+                    "false" -> return false
+                }
+            } catch (e: Exception) {
+                LogService.logException(e)
+                return false
+            }
+        }
+        return false
+    }
     /*
    Function to determine if a Publication node with a specified
    id exists in the database
     */
+    @Deprecated("Use nodeExistsPredicate method instead",
+        replaceWith = ReplaceWith("nodeExistsPredicate(nodeId: NodeIdentifier)"),
+        level = DeprecationLevel.WARNING)
     fun publicationNodeExistsPredicate(pubId: String): Boolean {
-        val cypher = "OPTIONAL MATCH (pub:Publication{pub_id: $pubId }) " +
-                " RETURN pub IS NOT NULL AS Predicate"
-        return try {
-            Neo4jConnectionService.executeCypherCommand(cypher).toBoolean()
-        } catch (e: Exception) {
-            LogService.logException(e)
-            false
-        }
+        val nodeId = NodeIdentifier("Publication","pub_id", pubId )
+        return nodeExistsPredicate(nodeId)
     }
 /*
 Utility function to determine if a specified node is in the database
@@ -121,74 +166,25 @@ Utility function to determine if a specified node is in the database
     }
 
     /*
-    Public function to determine if a Publication node with a specified
-    id and label exists in the database
-     */
-    fun publicationIdAndLabelPredicate(pubId: String,label:String):Boolean =
-        Neo4jConnectionService.executeCypherCommand(
-            "MATCH (pub:Publication{ pub_id: $pubId}) " +
-                    " WHERE apoc.label.exists(pub,\"$label\")" +
-                    " WITH count(*) AS count " +
-                    " CALL apoc.when (count > 0, " +
-                    " \"RETURN true AS bool\",  " +
-                    " \"RETURN false AS bool\", " +
-                    " {count:count}" +
-                    " ) YIELD value " +
-                    " return value.bool "
-        ).toBoolean()
-
-    /*
-    Utility function to add a secondary label to a node if that
-    label is novel
-     */
-    fun addSecondaryNodeLabel(nodeId: NodeIdentifier) {
-        when (nodeId.isValid()) {
-            true -> {
-                LogService.logFine(
-                    "Add Label to ${nodeId.primaryLabel} ${nodeId.primaryLabel}:${nodeId.idValue} " +
-                            "new label = ${nodeId.secondaryLabel}"
-                )
-                val cypher = "MATCH (child:${nodeId.primaryLabel}{${nodeId.primaryLabel}:" +
-                        " ${formatPropertyValue(nodeId.idValue)} }) " +
-                        " WHERE apoc.label.exists(child,\"${nodeId.secondaryLabel}\")  = false " +
-                        " CALL apoc.create.addLabels(child, [\"${nodeId.secondaryLabel}\"] )" +
-                        " yield node return node"
-                Neo4jConnectionService.executeCypherCommand(cypher)
-            }
-            false -> LogService.logWarn("Invalid NodeIdentifier: $nodeId")
-        }
-    }
-
-    /*
     Utility function to create a parent -[r:Relationship] -> child Neo4j relationship
      */
+    @Deprecated("Use defineRelationship method instead")
     fun createParentChildRelationship(parent:NodeIdentifier, child:NodeIdentifier,
                                       relationship: String) {
-        if (nodeExistsPredicate(parent).and(nodeExistsPredicate(child))
-                .and(relationship.isNotBlank())){
-            val cypher = "MATCH (parent:${parent.primaryLabel}), " +
-                    " (child:${child.primaryLabel}) WHERE " +
-                    " parent.${parent.idProperty} = ${formatPropertyValue(parent.idValue)} " +
-                    " AND child.${child.idProperty} = ${formatPropertyValue(child.idValue)} " +
-                    " MERGE (parent) -[r:$relationship] -> (child) " +
-                    " RETURN r "
-            Neo4jConnectionService.executeCypherCommand(cypher)
-        } else {
-            LogService.logWarn("Invalid input(s) parent: $parent \n" +
-                    " child: $child \n relationship: $relationship")
-        }
+        NodeIdentifierDao.defineRelationship(RelationshipDefinition(parent,child,relationship))
     }
-
     /*
-    Utility function that will quote a Neo4j property value if it
-    is not numeric.
-    Simplifies creating Cypher statements
-     */
-    fun formatPropertyValue(propertyValue: String): String {
-        return when (propertyValue.toIntOrNull()) {
-            null -> "\"$propertyValue\""
-            else -> propertyValue
-        }
+   Function to delete  all Neo4j relationships by a relationship name
+    */
+    @Deprecated("Use deleteRelationshipByType method instead")
+    fun deleteNodeRelationshipByName(parentNode: String, childNode: String, relType: String) {
+        deleteRelationshipsByType(relType)
     }
 
+    fun deleteRelationshipsByType(relType: String) {
+        Neo4jConnectionService.executeCypherCommand(
+            "MATCH () -[r:$relType]-() DELETE r;"
+        )
+        LogService.logInfo("Deleted all occurrences of relationship type: $relType")
+    }
 }
