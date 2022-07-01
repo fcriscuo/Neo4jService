@@ -40,12 +40,3 @@ class CsvRecordSequenceSupplier( aPath: Path) : Supplier<Sequence<CSVRecord>> {
         return recordSequence
     }
 }
-  /*
-  Test using a small sample file
-   */
-  fun main() {
-        val path = Paths.get("./data/classification.csv")
-        println("Processing csv file ${path.fileName}")
-        CsvRecordSequenceSupplier(path).get().take(100)
-            .forEach {println(it) }
-  }

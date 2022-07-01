@@ -33,6 +33,8 @@ object Neo4jConnectionService {
         Neo4jCypherWriter.close()
     }
 
+    fun isSampleContext():Boolean = database == "sample"
+
     // expose the current database name
     fun getDatabaseName():String = database
 

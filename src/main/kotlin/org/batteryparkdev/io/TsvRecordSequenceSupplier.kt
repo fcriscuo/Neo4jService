@@ -64,16 +64,3 @@ class TsvRecordSequenceSupplier : Supplier<Sequence<CSVRecord>> {
     }
 }
 
-fun main(args: Array<String>) {
-    val filePathName = if (args.isNotEmpty()) args[0] else "/Volumes/SSD870/COSMIC_rel96/Cancer_Gene_Census_Hallmarks_Of_Cancer.tsv"
-    val aPath = Paths.get(filePathName)
-    println("Processing delimited file: $filePathName")
-    val headerMap = CsvHeaderSupplier(aPath).get()
-    TsvRecordSequenceSupplier(aPath).get()
-        .take(100)
-        .forEach { record: CSVRecord ->
-            headerMap?.keys?.forEach(Consumer { key: String ->
-                println("*** column: $key  value= ${record[key]}")
-            })
-        }
-}

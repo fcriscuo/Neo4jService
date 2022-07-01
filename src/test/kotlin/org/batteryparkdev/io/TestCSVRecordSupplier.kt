@@ -9,8 +9,9 @@ fun main(args: Array<String>) {
     CSVRecordSupplier(csvPath).get().forEach {
         println("CSV Record: ${it.get("Gene Symbol")}")
     }
-    val tsvPath = Paths.get("./data/sample_CosmicMutantExport.tsv")
+    val tsvPath = Paths.get("./data/sample_CosmicMutantExportCensus.tsv")
     println("+++++++ Test Process TSV file: ${tsvPath.toString()}")
+
     var rowNumber = 0
     CSVRecordSupplier(tsvPath).get().forEach {
         rowNumber += 1
