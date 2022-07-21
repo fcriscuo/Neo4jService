@@ -19,8 +19,9 @@ class CSVRecordSupplier() : Supplier<Stream<CSVRecord>> {
 
 
     private var recordStream: Stream<CSVRecord> = Stream.empty<CSVRecord?>()
+    private val charset = Charset.forName("ISO-8859-1")
     constructor (aPath: Path) : this() {
-        val reader = Files.newBufferedReader(aPath)
+        val reader = Files.newBufferedReader(aPath, charset)
         val utf16charset = Charset.forName("UTF-16")
         val parser = when(aPath.toString().endsWith("tsv")) {
               true -> CSVParser.parse(
