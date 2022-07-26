@@ -50,6 +50,12 @@
             <artifactId>commons-csv</artifactId>
             <version>${apache.commons.csv.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-net/commons-net -->
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+            <version>3.8.0</version>
+        </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>

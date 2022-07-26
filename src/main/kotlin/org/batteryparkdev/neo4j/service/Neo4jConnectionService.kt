@@ -5,26 +5,24 @@
 package org.batteryparkdev.neo4j.service
 
 import org.batteryparkdev.logging.service.LogService
-import org.batteryparkdev.property.service.ConfigurationPropertiesService
+import org.batteryparkdev.property.service.Neo4jPropertiesService
 import org.jetbrains.kotlin.konan.file.use
 import org.neo4j.driver.*
 
 /**
- * Responsible for establishing a connection to a local Neo4j database
+ * Responsible for establishing a connection to a local or remote Neo4j database
  * Executes supplied Cypher commands
  *
  * Created by fcriscuo on 2021Aug06
  */
 object Neo4jConnectionService {
 
-    private val neo4jAccount = ConfigurationPropertiesService.getEnvVariable("NEO4J_ACCOUNT")
-    private val neo4jPassword = ConfigurationPropertiesService.getEnvVariable("NEO4J_PASSWORD")
-    private val uri = ConfigurationPropertiesService.getEnvVariable("NEO4J_URI")
-    private val logCypher = ConfigurationPropertiesService.getEnvVariable("NEO4J_LOG_CYPHER")
+    private val uri = Neo4jPropertiesService.neo4jUri
+    private val logCypher = Neo4jPropertiesService.logCypherCommands
     private val config: Config = Config.builder().withLogging(Logging.slf4j()).build()
-    private val database  = ConfigurationPropertiesService.getEnvVariable("NEO4J_DATABASE")
+    private val database  = Neo4jPropertiesService.neo4jDatabase
     private val driver = GraphDatabase.driver(
-        uri, AuthTokens.basic(neo4jAccount, neo4jPassword),
+        uri, AuthTokens.basic(Neo4jPropertiesService.neo4jAccount, Neo4jPropertiesService.neo4jPassword),
         config
     )
 
@@ -73,7 +71,7 @@ object Neo4jConnectionService {
     }
 
     fun executeCypherCommand(command: String): String {
-        if (logCypher == "TRUE")
+        if (logCypher)
          {
             Neo4jCypherWriter.recordCypherCommand(command)
         }
